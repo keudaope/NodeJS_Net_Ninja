@@ -20,6 +20,7 @@ app.set("view engine", "ejs");
 
 // meddleware & static files
 app.use(express.static("public"));
+app.use(express.urlencoded());
 app.use(morgan("dev"));
 
 // mongoose and mongo sandbox routes
@@ -95,8 +96,11 @@ app.get("/about", (req, res) => {
 });
 
 // blog routes
+app.get("/blogs/create", (req, res) => {
+  res.render("create", { title: "New Blog" });
+});
 
-app.get("/blogs", (rreq, res) => {
+app.get("/blogs", (req, res) => {
   Blog.find()
     .sort({ createdAt: -1 })
     .then((result) => {
@@ -107,9 +111,42 @@ app.get("/blogs", (rreq, res) => {
     });
 });
 
-app.get("/blogs/create", (req, res) => {
-  res.render("create", { title: "New Blog" });
+app.post("/blogs", (req, res) => {
+  const blog = new Blog(req.body);
+  blog
+    .save()
+    .then(() => {
+      res.redirect("/blogs");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
+
+app.get("/blogs/:id", (req, res) => {
+  const id = req.params.id;
+  Blog.findById(id)
+    .then((result) => {
+      res.render("details", { title: "Blog details", blog: result });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+app.delete("/blogs/:id", (req, res) => {
+  const id = req.params.id;
+  Blog.findByIdAndDelete(id)
+    .then((result) => {
+      res.json({ redirect: "/blogs" });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+// app.get("/blogs/create", (req, res) => {
+//   res.render("create", { title: "New Blog" });
+// });
 
 app.use((req, res) => {
   res.status(404).render("404", { title: "404" });
